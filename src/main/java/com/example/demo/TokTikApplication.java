@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class TokTikApplication {
 
 	public static void main(String[] args) {
+        System.out.println("TEST LOGSS");
 		SpringApplication.run(TokTikApplication.class, args);
 	}
 

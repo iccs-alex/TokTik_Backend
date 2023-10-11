@@ -12,10 +12,12 @@
 	<artifactId>toktik</artifactId>
 	<version>1.0</version>
 	<name>toktik</name>
-	<description>TikTok clone backend.</description>
+    <description>TikTok clone backend.</description>
+
 	<properties>
 		<java.version>17</java.version>
-	</properties>
+    </properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -45,11 +47,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.thymeleaf.extras</groupId>
-			<artifactId>thymeleaf-extras-springsecurity6</artifactId>
-		</dependency>
-
 		<dependency>
 			<groupId>org.mariadb.jdbc</groupId>
 			<artifactId>mariadb-java-client</artifactId>
