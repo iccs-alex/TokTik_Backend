@@ -46,6 +46,6 @@ public class WhoamiController {
 
     @GetMapping("/api/welcome")
     public String welcome() {
-        return "CLICKED";
+        return System.getenv("S3_KEY_ID");
     }
 }
