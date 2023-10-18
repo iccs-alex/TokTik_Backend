@@ -26,6 +26,12 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.HttpMethod;
 
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+
 import java.net.URL;
 import java.time.Duration;
 import java.util.Date;
@@ -35,6 +41,9 @@ import java.util.ArrayList;
 @RestController
 public class S3Controller {
 
+    @Autowired
+    MongoOperations mongoOperations;
+    
     @Autowired
     VideoRepository videoRepository;
 
@@ -68,6 +77,25 @@ public class S3Controller {
 
     @DeleteMapping("/api/video")
     public String deleteVideo(@RequestParam String key) {
+        try {
+            for (VideoDetails video: videoRepository.findAll()) {
+                System.out.println("Beforee: " + video.getTitle());
+            }
+
+            //Query deleteQuery = new Query();
+            //deleteQuery.addCriteria(Criteria.where("key").is(key));
+            //mongoOperations.remove(deleteQuery, VideoDetails.class);
+            System.out.println(key);
+            VideoDetails video_ = videoRepository.deleteByKey(key);
+            System.out.println(video_);
+
+            for (VideoDetails video: videoRepository.findAll()) {
+                System.out.println("After: " + video.getTitle());
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(region).build();
 
         URL url = s3.generatePresignedUrl(bucketName, key, new Date(new Date().getTime() + 100000), HttpMethod.DELETE);
