@@ -20,11 +20,11 @@ public class InitApplicationRunner implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         // add default admin user and set its password if missing
-        User admin = userRepository.findFirstByUsername("admin");
+        User admin = userRepository.findFirstByUsername("blue");
         if (admin == null) {
             admin = new User();
-            admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("123456"));
+            admin.setUsername("blue");
+            admin.setPassword(passwordEncoder.encode("shad"));
             admin.setRole("USER");
             userRepository.save(admin);
         }
