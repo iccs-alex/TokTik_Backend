@@ -52,6 +52,7 @@ public class S3Controller {
 
     @GetMapping("/api/video")
     public String getVideo(@RequestParam String key) {
+        System.out.println("ASD");
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(region).build();
 
         URL url = s3.generatePresignedUrl(bucketName, key, new Date(new Date().getTime() + 100000), HttpMethod.GET);
