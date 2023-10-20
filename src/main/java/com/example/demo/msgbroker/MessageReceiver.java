@@ -8,6 +8,10 @@ public class MessageReceiver implements MessageListener {
 
     @Override
     public void onMessage(Message message, byte[] pattern) {
-        System.out.println("Receiving messages, consumed event : " + message);
+        String channel = new String(message.getChannel());
+        String messageBody = new String(message.getBody());
+        // Handle the message received from the channel
+        System.out.println("Received message on channel '" + channel + "': " + messageBody);
     }
+    
 }
