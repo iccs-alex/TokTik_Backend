@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.serializer.GenericToStringSerializer;
 
 @Configuration
 public class MessageBrokerConfig {
@@ -24,7 +25,7 @@ public class MessageBrokerConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory());
         template.setKeySerializer(new StringRedisSerializer());
-        // Add other serializers if you need to store non-string data.
+        template.setValueSerializer(new GenericToStringSerializer<>(String.class));
         return template;
     }
 

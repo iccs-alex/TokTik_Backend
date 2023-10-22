@@ -14,13 +14,10 @@ import java.io.Serializable;
 @NoArgsConstructor
 public class Message implements Serializable {
     
-    private static final String FORMAT = "Id: %l, Key: %s";
-
-    private Long id;
     private String videoKey;
     
     @Override
     public String toString() {
-        return String.format(FORMAT, this.id, this.videoKey);
+        return this.videoKey;
     }
 }

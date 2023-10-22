@@ -21,26 +21,12 @@ public class MessagePublisher {
 
     @PostMapping("/api/publish")
     public void publish(@RequestBody Message message) {
-        System.out.println("Sending to redis: { " + message.getId() + " " + message.getVideoKey() + " }");
-        //addToRedis(message.getId().toString(), message.getVideoKey());
-        sendMessageToChannel("convert", message);
+        System.out.println("Received: " + message.getVideoKey());
+        sendDataToChannel("convert", message.getVideoKey());
     }
 
-    @GetMapping("/api/publish")
-    public void getMessage(@RequestBody Message message) {
-        System.out.println("Sending to redis: { " + message.getId() + " " + message.getVideoKey() + " }");
-        addToRedis(message.getId().toString(), message.getVideoKey());
-    }
-
-    public void addToRedis(String key, Object value) {
-        redisTemplate.opsForValue().set(key, value);
-    }
-
-    public Object getFromRedis(String key) {
-        return redisTemplate.opsForValue().get(key);
-    }
-
-    public void sendMessageToChannel(String channel, Message message) {
-        redisTemplate.convertAndSend(channel, message);
+    public void sendDataToChannel(String channel, String data) {
+        System.out.println("Frontend data: " + data);
+        redisTemplate.convertAndSend(channel, data);
     }
 }
