@@ -52,7 +52,6 @@ public class S3Controller {
 
     @GetMapping("/api/video")
     public String getVideo(@RequestParam String key) {
-        System.out.println("ASD");
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(region).build();
 
         URL url = s3.generatePresignedUrl(bucketName, key, new Date(new Date().getTime() + 100000), HttpMethod.GET);
@@ -64,9 +63,6 @@ public class S3Controller {
     public String putVideo(@RequestBody VideoDetails videoDetails) {
         try {
             VideoDetails _videoDetails = videoRepository.save(new VideoDetails(videoDetails.getKey(), videoDetails.getTitle(), videoDetails.getDescription()));
-            for (VideoDetails video: videoRepository.findAll()) {
-                System.out.println(video.getTitle());
-            }
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -79,20 +75,8 @@ public class S3Controller {
     @DeleteMapping("/api/video")
     public String deleteVideo(@RequestParam String key) {
         try {
-            for (VideoDetails video: videoRepository.findAll()) {
-                System.out.println("Beforee: " + video.getTitle());
-            }
-
-            //Query deleteQuery = new Query();
-            //deleteQuery.addCriteria(Criteria.where("key").is(key));
-            //mongoOperations.remove(deleteQuery, VideoDetails.class);
-            System.out.println(key);
             VideoDetails video_ = videoRepository.deleteByKey(key);
-            System.out.println(video_);
 
-            for (VideoDetails video: videoRepository.findAll()) {
-                System.out.println("After: " + video.getTitle());
-            }
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -106,7 +90,6 @@ public class S3Controller {
     
     @GetMapping("/api/videos")
     public List<VideoDetails> getAllVideos() {
-        System.out.println("HELLOTHERE");
         return videoRepository.findAll();
     }
 
@@ -118,7 +101,6 @@ public class S3Controller {
 
         List<S3ObjectSummary> objects = objectList.getObjectSummaries();
         for (S3ObjectSummary os : objects) {
-            System.out.println("* " + os.getKey());
             videosDetails.add(VideoDetails.builder().title(os.getKey()).build());
         }
 
