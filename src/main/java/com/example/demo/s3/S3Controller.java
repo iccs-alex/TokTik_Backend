@@ -67,7 +67,7 @@ public class S3Controller {
             System.out.println(e);
         }
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(region).build();
-        URL url = s3.generatePresignedUrl(bucketName, videoDetails.getKey(), new Date(new Date().getTime() + 100000), HttpMethod.PUT);
+        URL url = s3.generatePresignedUrl(bucketName, "videos/" + videoDetails.getKey(), new Date(new Date().getTime() + 100000), HttpMethod.PUT);
         
         return url.toString();
     }
@@ -76,7 +76,6 @@ public class S3Controller {
     public String deleteVideo(@RequestParam String key) {
         try {
             VideoDetails video_ = videoRepository.deleteByKey(key);
-
         } catch (Exception e) {
             System.out.println(e);
         }
