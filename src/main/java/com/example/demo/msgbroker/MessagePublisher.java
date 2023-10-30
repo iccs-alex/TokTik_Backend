@@ -19,6 +19,9 @@ public class MessagePublisher {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
+    @Autowired
+    private WorkerRepository workerRepository;
+
     @PostMapping("/api/publish")
     public void publish(@RequestBody Message message) {
         System.out.println("Received: " + message.getVideoKey());
@@ -28,5 +31,11 @@ public class MessagePublisher {
     public void sendDataToChannel(String channel, String data) {
         System.out.println("Frontend data: " + data);
         redisTemplate.convertAndSend(channel, data);
+    }
+
+    @GetMapping("/api/worker_status")
+    public String getWorkerStatus() {
+        System.out.println(workerRepository.findById(0));
+        return workerRepository.findById(0);
     }
 }

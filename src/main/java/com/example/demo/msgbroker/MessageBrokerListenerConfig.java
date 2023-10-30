@@ -21,9 +21,6 @@ public class MessageBrokerListenerConfig {
         System.out.println("Creating channels");
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(redisConnectionFactory);
-        container.addMessageListener(myMessageListener(), new ChannelTopic("convert"));
-        container.addMessageListener(myMessageListener(), new ChannelTopic("thumbnail"));
-        container.addMessageListener(myMessageListener(), new ChannelTopic("process"));
         container.addMessageListener(myMessageListener(), new ChannelTopic("backend"));
         // Add more channels as needed
         return container;
