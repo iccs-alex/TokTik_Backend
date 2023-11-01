@@ -2,7 +2,6 @@ package com.example.demo.s3;
 
 import com.example.demo.s3.VideoDetails;
 import com.example.demo.s3.VideoRepository;
-import com.example.demo.User;
 import com.example.demo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;

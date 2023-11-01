@@ -1,6 +1,6 @@
 package com.example.demo.init;
 
-import com.example.demo.User;
+import com.example.demo.MyUser;
 import com.example.demo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -20,9 +20,9 @@ public class InitApplicationRunner implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         // add default admin user and set its password if missing
-        User admin = userRepository.findFirstByUsername("blue");
+        MyUser admin = userRepository.findFirstByUsername("blue");
         if (admin == null) {
-            admin = new User();
+            admin = new MyUser();
             admin.setUsername("blue");
             admin.setPassword(passwordEncoder.encode("shad"));
             admin.setRole("USER");
