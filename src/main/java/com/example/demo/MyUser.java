@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,4 +22,5 @@ public class MyUser {
     private String password;
 
     private String role;
+
 }
