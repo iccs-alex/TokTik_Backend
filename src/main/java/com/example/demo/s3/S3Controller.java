@@ -91,20 +91,4 @@ public class S3Controller {
         return videoRepository.findAll();
     }
 
-    @GetMapping("/api/vids")
-    public List<VideoDetails> getAllVids() {
-        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(region).build();
-        List<VideoDetails> videosDetails = new ArrayList<VideoDetails>();
-        ListObjectsV2Result objectList = s3.listObjectsV2(bucketName);
-
-        List<S3ObjectSummary> objects = objectList.getObjectSummaries();
-        for (S3ObjectSummary os : objects) {
-            videosDetails.add(VideoDetails.builder().title(os.getKey()).build());
-        }
-
-        return videosDetails;
-    }
-
-
-
 }
