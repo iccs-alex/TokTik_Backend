@@ -1,6 +1,5 @@
 package com.example.demo.videos;
 
-import com.example.demo.UserRepository;
 import com.example.demo.msgbroker.MessagePublisher;
 import com.example.demo.videos.VideoDetails;
 import com.example.demo.videos.VideoRepository;
@@ -42,13 +41,12 @@ import java.util.List;
 import java.util.ArrayList;
 import org.json.simple.JSONObject;
 
-
 @RestController
 public class VideoController {
 
     @Autowired
     MongoOperations mongoOperations;
-    
+
     @Autowired
     VideoRepository videoRepository;
 
@@ -65,20 +63,22 @@ public class VideoController {
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(region).build();
 
         URL url = s3.generatePresignedUrl(s3BucketName, key, new Date(new Date().getTime() + 100000), HttpMethod.GET);
-        
+
         return url.toString();
     }
 
     @PutMapping("/api/video")
     public String putVideo(@RequestBody VideoDetails videoDetails) {
         try {
-            VideoDetails _videoDetails = videoRepository.save(new VideoDetails(videoDetails.getKey(), videoDetails.getTitle(), videoDetails.getDescription()));
+            VideoDetails _videoDetails = videoRepository.save(
+                    new VideoDetails(videoDetails.getKey(), videoDetails.getTitle(), videoDetails.getDescription()));
         } catch (Exception e) {
             System.out.println(e);
         }
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(region).build();
-        URL url = s3.generatePresignedUrl(s3BucketName, "videos/" + videoDetails.getKey(), new Date(new Date().getTime() + 100000), HttpMethod.PUT);
-        
+        URL url = s3.generatePresignedUrl(s3BucketName, "videos/" + videoDetails.getKey(),
+                new Date(new Date().getTime() + 100000), HttpMethod.PUT);
+
         return url.toString();
     }
 
@@ -92,18 +92,23 @@ public class VideoController {
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(region).build();
 
-        URL url = s3.generatePresignedUrl(s3BucketName, key, new Date(new Date().getTime() + 100000), HttpMethod.DELETE);
+        URL url = s3.generatePresignedUrl(s3BucketName, key, new Date(new Date().getTime() + 100000),
+                HttpMethod.DELETE);
 
         return url.toString();
     }
-    
+
     @GetMapping("/api/videos")
     public List<VideoDetails> getAllVideos() {
         return videoRepository.findAll();
     }
 
+    @GetMapping("/api/video/details")
+    public VideoDetails getVideoDetails(@RequestParam String key) {
+        return videoRepository.findByKey(key).get(0);
+    }
 
-    @PostMapping("/api/view")
+    @PostMapping("/api/video/view")
     public Integer viewVideo(@RequestParam String key) {
         VideoDetails videoDetails_ = videoRepository.findByKey(key).get(0);
         Integer newViewCount = videoDetails_.getViewCount() + 1;
@@ -111,16 +116,55 @@ public class VideoController {
         videoRepository.save(videoDetails_);
 
         JSONObject jsonObj = new JSONObject();
-        jsonObj.put("room", "video:"+key);
+        jsonObj.put("action", "viewUpdate");
+        jsonObj.put("room", "video:" + key);
         jsonObj.put("viewCount", newViewCount);
-        sendDataToChannel(socketioChannel,  jsonObj);
+        sendDataToChannel(socketioChannel, jsonObj);
 
         return newViewCount;
+    }
+
+    @PostMapping("/api/video/like")
+    public Integer likeVideo(@RequestParam String key, @RequestParam String username) {
+
+        // Update Like Count
+        VideoDetails videoDetails_ = videoRepository.findByKey(key).get(0);
+        Integer newLikeCount = videoDetails_.getLikeCount() + 1;
+        videoDetails_.setLikeCount(newLikeCount);
+        videoDetails_.getUserLikes().add(username);
+        videoRepository.save(videoDetails_);
+        System.out.println(videoRepository.findByKey(key).get(0).getUserLikes());
+
+        // Send socketio message
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("action", "likeUpdate");
+        jsonObj.put("room", "video:" + key);
+        jsonObj.put("likeCount", newLikeCount);
+        sendDataToChannel(socketioChannel, jsonObj);
+
+        return newLikeCount;
+    }
+
+    @PostMapping("/api/video/unlike")
+    public Integer unlikeVideo(@RequestParam String key, @RequestParam String username) {
+        VideoDetails videoDetails_ = videoRepository.findByKey(key).get(0);
+        Integer newLikeCount = videoDetails_.getLikeCount() - 1;
+        videoDetails_.setLikeCount(newLikeCount);
+        videoDetails_.getUserLikes().remove(username);
+        videoRepository.save(videoDetails_);
+        System.out.println(videoRepository.findByKey(key).get(0).getUserLikes());
+
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("action", "likeUpdate");
+        jsonObj.put("room", "video:" + key);
+        jsonObj.put("likeCount", newLikeCount);
+        sendDataToChannel(socketioChannel, jsonObj);
+
+        return newLikeCount;
     }
 
     public void sendDataToChannel(String channel, JSONObject data) {
         redisTemplate.convertAndSend(channel, data);
     }
-
 
 }
