@@ -1,11 +1,14 @@
-package com.example.demo.s3;
+package com.example.demo.videos;
 
-import com.example.demo.s3.VideoDetails;
-import com.example.demo.s3.VideoRepository;
 import com.example.demo.UserRepository;
+import com.example.demo.msgbroker.MessagePublisher;
+import com.example.demo.videos.VideoDetails;
+import com.example.demo.videos.VideoRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,15 +33,18 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.net.URL;
 import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
+import org.json.simple.JSONObject;
+
 
 @RestController
-public class S3Controller {
+public class VideoController {
 
     @Autowired
     MongoOperations mongoOperations;
@@ -46,14 +52,19 @@ public class S3Controller {
     @Autowired
     VideoRepository videoRepository;
 
-    String bucketName = "toktik-videos";
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    String socketioChannel = "socketio";
+
+    String s3BucketName = "toktik-videos";
     Regions region = Regions.AP_SOUTHEAST_1;
 
     @GetMapping("/api/video")
     public String getVideo(@RequestParam String key) {
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(region).build();
 
-        URL url = s3.generatePresignedUrl(bucketName, key, new Date(new Date().getTime() + 100000), HttpMethod.GET);
+        URL url = s3.generatePresignedUrl(s3BucketName, key, new Date(new Date().getTime() + 100000), HttpMethod.GET);
         
         return url.toString();
     }
@@ -66,7 +77,7 @@ public class S3Controller {
             System.out.println(e);
         }
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(region).build();
-        URL url = s3.generatePresignedUrl(bucketName, "videos/" + videoDetails.getKey(), new Date(new Date().getTime() + 100000), HttpMethod.PUT);
+        URL url = s3.generatePresignedUrl(s3BucketName, "videos/" + videoDetails.getKey(), new Date(new Date().getTime() + 100000), HttpMethod.PUT);
         
         return url.toString();
     }
@@ -81,7 +92,7 @@ public class S3Controller {
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(region).build();
 
-        URL url = s3.generatePresignedUrl(bucketName, key, new Date(new Date().getTime() + 100000), HttpMethod.DELETE);
+        URL url = s3.generatePresignedUrl(s3BucketName, key, new Date(new Date().getTime() + 100000), HttpMethod.DELETE);
 
         return url.toString();
     }
@@ -90,5 +101,26 @@ public class S3Controller {
     public List<VideoDetails> getAllVideos() {
         return videoRepository.findAll();
     }
+
+
+    @PostMapping("/api/view")
+    public Integer viewVideo(@RequestParam String key) {
+        VideoDetails videoDetails_ = videoRepository.findByKey(key).get(0);
+        Integer newViewCount = videoDetails_.getViewCount() + 1;
+        videoDetails_.setViewCount(newViewCount);
+        videoRepository.save(videoDetails_);
+
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("room", "video:"+key);
+        jsonObj.put("viewCount", newViewCount);
+        sendDataToChannel(socketioChannel,  jsonObj);
+
+        return newViewCount;
+    }
+
+    public void sendDataToChannel(String channel, JSONObject data) {
+        redisTemplate.convertAndSend(channel, data);
+    }
+
 
 }

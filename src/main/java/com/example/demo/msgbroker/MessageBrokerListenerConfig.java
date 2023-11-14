@@ -18,7 +18,6 @@ public class MessageBrokerListenerConfig {
 
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory redisConnectionFactory) {
-        System.out.println("Creating channels");
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(redisConnectionFactory);
         container.addMessageListener(myMessageListener(), new ChannelTopic("backend"));
