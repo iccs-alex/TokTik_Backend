@@ -69,9 +69,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 				.antMatchers("/api/auth/**").permitAll()
 				.antMatchers(HttpMethod.GET, "/api/video").permitAll()
 				.antMatchers(HttpMethod.GET,"/api/videos").permitAll()
-				.antMatchers(HttpMethod.POST,"/api/video/view").permitAll()
-				.antMatchers(HttpMethod.POST,"/api/video/like").permitAll()
-				.antMatchers(HttpMethod.POST,"/api/video/unlike").permitAll()
+				.antMatchers(HttpMethod.POST,"/api/video/**").permitAll()
 				.antMatchers(HttpMethod.GET, "/api/video/**").permitAll()
 				.antMatchers(HttpMethod.GET, "/api/worker_status").permitAll()
 				// all other requests need to be authenticated

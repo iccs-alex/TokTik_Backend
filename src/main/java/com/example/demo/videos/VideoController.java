@@ -38,6 +38,7 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
 import org.json.simple.JSONObject;
 
@@ -163,6 +164,31 @@ public class VideoController {
         return newLikeCount;
     }
 
+    
+    @PostMapping("/api/video/comment")
+    public Object comment(@RequestParam String key, @RequestParam String username, @RequestBody JSONObject comment) {
+        VideoDetails videoDetails_ = videoRepository.findByKey(key).get(0);
+        System.out.println("The comment:");
+        System.out.println(comment.get(comment));
+        videoDetails_.getVideoComments().add(new VideoComment(username, (String) comment.get("comment")));
+        videoRepository.save(videoDetails_);
+        
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("action", "commentUpdate");
+        jsonObj.put("room", "video:" + key);
+        sendDataToChannel(socketioChannel, jsonObj);
+        
+        return comment.get("comment");
+    }
+    
+    @GetMapping("/api/video/comments")
+    public List<VideoComment> getComments(@RequestParam String key) {
+        VideoDetails videoDetails_ = videoRepository.findByKey(key).get(0);
+        
+        
+        return videoDetails_.videoComments;
+    }
+    
     public void sendDataToChannel(String channel, JSONObject data) {
         redisTemplate.convertAndSend(channel, data);
     }

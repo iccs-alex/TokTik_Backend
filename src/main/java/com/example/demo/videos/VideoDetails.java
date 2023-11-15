@@ -26,6 +26,7 @@ public class VideoDetails {
     public Integer likeCount;
 
     public List<String> userLikes;
+    public List<VideoComment> videoComments;
 
     public VideoDetails(String key, String title, String description) {
         this.key = key;
@@ -34,6 +35,7 @@ public class VideoDetails {
         this.viewCount = 0;
         this.likeCount = 0;
         this.userLikes = new ArrayList<String>();
+        this.videoComments = new ArrayList<VideoComment>();
     }
 
 }
