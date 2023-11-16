@@ -2,7 +2,7 @@ package com.example.demo.msgbroker;
 
 import java.util.List;
 import com.example.demo.msgbroker.Message;
-import com.example.demo.videos.VideoDetails;
+import com.example.demo.server.VideoDetails;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.redis.core.RedisTemplate;

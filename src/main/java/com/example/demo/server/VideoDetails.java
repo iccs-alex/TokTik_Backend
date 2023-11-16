@@ -1,4 +1,4 @@
-package com.example.demo.videos;
+package com.example.demo.server;
 
 import lombok.Getter;
 import lombok.Setter;

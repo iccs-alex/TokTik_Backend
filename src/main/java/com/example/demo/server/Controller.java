@@ -1,8 +1,12 @@
-package com.example.demo.videos;
+package com.example.demo.server;
 
+import com.example.demo.MyUser;
+import com.example.demo.Notif;
+import com.example.demo.SubbedVideo;
+import com.example.demo.UserRepository;
 import com.example.demo.msgbroker.MessagePublisher;
-import com.example.demo.videos.VideoDetails;
-import com.example.demo.videos.VideoRepository;
+import com.example.demo.server.VideoDetails;
+import com.example.demo.server.VideoRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -43,13 +47,16 @@ import java.util.ArrayList;
 import org.json.simple.JSONObject;
 
 @RestController
-public class VideoController {
+public class Controller {
 
     @Autowired
     MongoOperations mongoOperations;
 
     @Autowired
     VideoRepository videoRepository;
+
+    @Autowired
+    UserRepository userRepository;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -136,12 +143,15 @@ public class VideoController {
         videoRepository.save(videoDetails_);
         System.out.println(videoRepository.findByKey(key).get(0).getUserLikes());
 
-        // Send socketio message
+        // Send socketio like update
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("action", "likeUpdate");
         jsonObj.put("room", "video:" + key);
         jsonObj.put("likeCount", newLikeCount);
         sendDataToChannel(socketioChannel, jsonObj);
+
+        addSubbedVideo(username, key);
+        sendNotifs(key);
 
         return newLikeCount;
     }
@@ -164,31 +174,85 @@ public class VideoController {
         return newLikeCount;
     }
 
-    
     @PostMapping("/api/video/comment")
     public Object comment(@RequestParam String key, @RequestParam String username, @RequestBody JSONObject comment) {
+        
+        // Add comment to video
         VideoDetails videoDetails_ = videoRepository.findByKey(key).get(0);
         System.out.println("The comment:");
         System.out.println(comment.get(comment));
         videoDetails_.getVideoComments().add(new VideoComment(username, (String) comment.get("comment")));
         videoRepository.save(videoDetails_);
-        
-        JSONObject jsonObj = new JSONObject();
-        jsonObj.put("action", "commentUpdate");
-        jsonObj.put("room", "video:" + key);
-        sendDataToChannel(socketioChannel, jsonObj);
-        
+
+        // Send socketio comment update
+        JSONObject commentJson = new JSONObject();
+        commentJson.put("action", "commentUpdate");
+        commentJson.put("room", "video:" + key);
+        sendDataToChannel(socketioChannel, commentJson);
+
+        addSubbedVideo(username, key);
+        sendNotifs(key);
+
         return comment.get("comment");
     }
-    
+
     @GetMapping("/api/video/comments")
     public List<VideoComment> getComments(@RequestParam String key) {
         VideoDetails videoDetails_ = videoRepository.findByKey(key).get(0);
-        
-        
+
         return videoDetails_.videoComments;
     }
-    
+
+    @PostMapping("/api/notif")
+    public Notif notif(@RequestParam String username, @RequestBody Notif notif) {
+        MyUser user_ = userRepository.findFirstByUsername(username);
+        System.out.println("The notif:");
+        System.out.println(notif);
+        user_.getNotifs().add(notif);
+        userRepository.save(user_);
+
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("action", "notifUpdate");
+        jsonObj.put("room", "navbar");
+        sendDataToChannel(socketioChannel, jsonObj);
+
+        return notif;
+    }
+
+    @GetMapping("/api/notifs")
+    public List<Notif> getNotifs(@RequestParam String username) {
+        MyUser user_ = userRepository.findFirstByUsername(username);
+
+        return user_.getNotifs();
+    }
+
+    private void addSubbedVideo(String username, String key) {
+        MyUser user_ = userRepository.findFirstByUsername(username);
+        user_.getSubbedVideos().add(key);
+        userRepository.save(user_);
+    }
+
+    private void sendNotifs(String key) {
+        List<MyUser> subbedUsers = userRepository.findAllUsersBySubbedVideo(key);
+
+        for (MyUser subbedUser : subbedUsers) {
+            System.out.println(subbedUser.getUsername());
+            Notif notif = new Notif("Someone commented on a video.", subbedUser);
+            subbedUser.addNotif(notif);
+            System.out.println(subbedUser.getNotifs().get(subbedUser.getNotifs().size() - 1).getMessage());
+            userRepository.save(subbedUser);
+            System.out.println(userRepository.findFirstByUsername(subbedUser.getUsername()).getNotifs()
+                    .get(userRepository.findFirstByUsername(subbedUser.getUsername()).getNotifs().size() - 1)
+                    .getMessage());
+        }
+
+        JSONObject notifJson = new JSONObject();
+        notifJson.put("action", "notifUpdate");
+        notifJson.put("room", "notifComment:" + key);
+        sendDataToChannel(socketioChannel, notifJson);
+
+    }
+
     public void sendDataToChannel(String channel, JSONObject data) {
         redisTemplate.convertAndSend(channel, data);
     }
