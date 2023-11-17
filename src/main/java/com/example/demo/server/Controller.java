@@ -79,7 +79,8 @@ public class Controller {
     public String putVideo(@RequestBody VideoDetails videoDetails) {
         try {
             VideoDetails _videoDetails = videoRepository.save(
-                    new VideoDetails(videoDetails.getKey(), videoDetails.getTitle(), videoDetails.getDescription()));
+                    new VideoDetails(videoDetails.getKey(), videoDetails.getUsername(), videoDetails.getTitle(),
+                            videoDetails.getDescription()));
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -111,22 +112,31 @@ public class Controller {
         return videoRepository.findAll();
     }
 
+    @GetMapping("/api/videos/user")
+    public List<VideoDetails> getUserVideos(@RequestParam String username) {
+        return videoRepository.findByUsername(username);
+    }
+
     @GetMapping("/api/video/details")
     public VideoDetails getVideoDetails(@RequestParam String key) {
-        return videoRepository.findByKey(key).get(0);
+        return videoRepository.findByKey(key);
     }
 
     @PostMapping("/api/video/view")
     public Integer viewVideo(@RequestParam String key) {
-        VideoDetails videoDetails_ = videoRepository.findByKey(key).get(0);
+        VideoDetails videoDetails_ = videoRepository.findByKey(key);
         Integer newViewCount = videoDetails_.getViewCount() + 1;
         videoDetails_.setViewCount(newViewCount);
         videoRepository.save(videoDetails_);
 
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("action", "viewUpdate");
-        jsonObj.put("room", "video:" + key);
-        jsonObj.put("viewCount", newViewCount);
+        String[] rooms = { "video:" + key, "home" };
+        jsonObj.put("rooms", rooms);
+        JSONObject jsonData = new JSONObject();
+        jsonData.put("viewCount", newViewCount);
+        jsonData.put("videoKey", key);
+        jsonObj.put("data", jsonData);
         sendDataToChannel(socketioChannel, jsonObj);
 
         return newViewCount;
@@ -136,39 +146,47 @@ public class Controller {
     public Integer likeVideo(@RequestParam String key, @RequestParam String username) {
 
         // Update Like Count
-        VideoDetails videoDetails_ = videoRepository.findByKey(key).get(0);
+        VideoDetails videoDetails_ = videoRepository.findByKey(key);
         Integer newLikeCount = videoDetails_.getLikeCount() + 1;
         videoDetails_.setLikeCount(newLikeCount);
         videoDetails_.getUserLikes().add(username);
         videoRepository.save(videoDetails_);
-        System.out.println(videoRepository.findByKey(key).get(0).getUserLikes());
+        System.out.println(videoRepository.findByKey(key).getUserLikes());
 
         // Send socketio like update
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("action", "likeUpdate");
-        jsonObj.put("room", "video:" + key);
-        jsonObj.put("likeCount", newLikeCount);
+        String[] rooms = { "video:" + key, "home" };
+        jsonObj.put("rooms", rooms);
+        JSONObject jsonData = new JSONObject();
+        jsonData.put("likeCount", newLikeCount);
+        jsonData.put("videoKey", key);
+        jsonObj.put("data", jsonData);
         sendDataToChannel(socketioChannel, jsonObj);
 
         addSubbedVideo(username, key);
-        sendNotifs(key);
+        sendNotifs(key, username + " liked a video.", username);
 
         return newLikeCount;
     }
 
     @PostMapping("/api/video/unlike")
     public Integer unlikeVideo(@RequestParam String key, @RequestParam String username) {
-        VideoDetails videoDetails_ = videoRepository.findByKey(key).get(0);
+        VideoDetails videoDetails_ = videoRepository.findByKey(key);
         Integer newLikeCount = videoDetails_.getLikeCount() - 1;
         videoDetails_.setLikeCount(newLikeCount);
         videoDetails_.getUserLikes().remove(username);
         videoRepository.save(videoDetails_);
-        System.out.println(videoRepository.findByKey(key).get(0).getUserLikes());
+        System.out.println(videoRepository.findByKey(key).getUserLikes());
 
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("action", "likeUpdate");
-        jsonObj.put("room", "video:" + key);
-        jsonObj.put("likeCount", newLikeCount);
+        String[] rooms = { "video:" + key, "home" };
+        jsonObj.put("rooms", rooms);
+        JSONObject jsonData = new JSONObject();
+        jsonData.put("likeCount", newLikeCount);
+        jsonData.put("videoKey", key);
+        jsonObj.put("data", jsonData);
         sendDataToChannel(socketioChannel, jsonObj);
 
         return newLikeCount;
@@ -176,9 +194,9 @@ public class Controller {
 
     @PostMapping("/api/video/comment")
     public Object comment(@RequestParam String key, @RequestParam String username, @RequestBody JSONObject comment) {
-        
+
         // Add comment to video
-        VideoDetails videoDetails_ = videoRepository.findByKey(key).get(0);
+        VideoDetails videoDetails_ = videoRepository.findByKey(key);
         System.out.println("The comment:");
         System.out.println(comment.get(comment));
         videoDetails_.getVideoComments().add(new VideoComment(username, (String) comment.get("comment")));
@@ -187,18 +205,19 @@ public class Controller {
         // Send socketio comment update
         JSONObject commentJson = new JSONObject();
         commentJson.put("action", "commentUpdate");
-        commentJson.put("room", "video:" + key);
+        String[] rooms = { "video:" + key };
+        commentJson.put("rooms", rooms);
         sendDataToChannel(socketioChannel, commentJson);
 
         addSubbedVideo(username, key);
-        sendNotifs(key);
+        sendNotifs(key, username + " commented on a video.", username);
 
         return comment.get("comment");
     }
 
     @GetMapping("/api/video/comments")
     public List<VideoComment> getComments(@RequestParam String key) {
-        VideoDetails videoDetails_ = videoRepository.findByKey(key).get(0);
+        VideoDetails videoDetails_ = videoRepository.findByKey(key);
 
         return videoDetails_.videoComments;
     }
@@ -213,7 +232,8 @@ public class Controller {
 
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("action", "notifUpdate");
-        jsonObj.put("room", "navbar");
+        String[] rooms = { "navbar" };
+        jsonObj.put("rooms", rooms);
         sendDataToChannel(socketioChannel, jsonObj);
 
         return notif;
@@ -228,16 +248,22 @@ public class Controller {
 
     private void addSubbedVideo(String username, String key) {
         MyUser user_ = userRepository.findFirstByUsername(username);
+        if (user_.getSubbedVideos().contains(key)) {
+            return;
+        }
+
         user_.getSubbedVideos().add(key);
         userRepository.save(user_);
     }
 
-    private void sendNotifs(String key) {
+    private void sendNotifs(String key, String notifMessage, String username) {
         List<MyUser> subbedUsers = userRepository.findAllUsersBySubbedVideo(key);
 
         for (MyUser subbedUser : subbedUsers) {
+            if (subbedUser.getUsername().equals(username))
+                continue;
             System.out.println(subbedUser.getUsername());
-            Notif notif = new Notif("Someone commented on a video.", subbedUser);
+            Notif notif = new Notif(notifMessage, subbedUser);
             subbedUser.addNotif(notif);
             System.out.println(subbedUser.getNotifs().get(subbedUser.getNotifs().size() - 1).getMessage());
             userRepository.save(subbedUser);
@@ -248,7 +274,8 @@ public class Controller {
 
         JSONObject notifJson = new JSONObject();
         notifJson.put("action", "notifUpdate");
-        notifJson.put("room", "notifComment:" + key);
+        String[] rooms = { "notifComment:" + key };
+        notifJson.put("rooms", rooms);
         sendDataToChannel(socketioChannel, notifJson);
 
     }

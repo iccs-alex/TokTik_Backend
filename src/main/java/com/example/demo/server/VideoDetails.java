@@ -19,6 +19,8 @@ public class VideoDetails {
 
     @Id
     public String key;
+
+    public String username;
     public String title;
     public String description;
     
@@ -28,8 +30,9 @@ public class VideoDetails {
     public List<String> userLikes;
     public List<VideoComment> videoComments;
 
-    public VideoDetails(String key, String title, String description) {
+    public VideoDetails(String key, String username, String title, String description) {
         this.key = key;
+        this.username = username;
         this.title = title;
         this.description = description;
         this.viewCount = 0;
