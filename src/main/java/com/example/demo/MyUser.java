@@ -34,7 +34,11 @@ public class MyUser {
     private List<String> subbedVideos = new ArrayList<>();
 
     public void addNotif(Notif notif) {
-        notifs.add(notif);
+        notifs.add(0, notif);
+    }
+
+    public void removeNotif(Long notifId) {
+        notifs.removeIf(n -> n.getId().equals(notifId));
     }
 
     public MyUser(String username, String password, String role) {

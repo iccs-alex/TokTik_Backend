@@ -25,14 +25,16 @@ public class Notif {
     private Long id;
 
     public String message;
+    public String videoKey;
 
     @ManyToOne
     @JsonIgnore
     @JoinColumn(name = "username")
     private MyUser user;
 
-    public Notif(String message, MyUser user) {
+    public Notif(String message, String videoKey, MyUser user) {
         this.message = message;
+        this.videoKey = videoKey;
         this.user = user;
     }
  

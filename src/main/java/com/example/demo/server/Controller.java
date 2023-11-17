@@ -239,6 +239,14 @@ public class Controller {
         return notif;
     }
 
+    @DeleteMapping("/api/notif")
+    public List<Notif> deleteNotif(@RequestParam String username, @RequestParam Long notifId) {
+        MyUser user_ = userRepository.findFirstByUsername(username);
+        user_.removeNotif(notifId);
+        userRepository.save(user_);
+        return userRepository.findFirstByUsername(username).getNotifs();
+    }
+
     @GetMapping("/api/notifs")
     public List<Notif> getNotifs(@RequestParam String username) {
         MyUser user_ = userRepository.findFirstByUsername(username);
@@ -263,7 +271,7 @@ public class Controller {
             if (subbedUser.getUsername().equals(username))
                 continue;
             System.out.println(subbedUser.getUsername());
-            Notif notif = new Notif(notifMessage, subbedUser);
+            Notif notif = new Notif(notifMessage, key, subbedUser);
             subbedUser.addNotif(notif);
             System.out.println(subbedUser.getNotifs().get(subbedUser.getNotifs().size() - 1).getMessage());
             userRepository.save(subbedUser);
