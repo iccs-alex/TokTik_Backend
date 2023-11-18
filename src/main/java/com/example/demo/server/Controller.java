@@ -7,6 +7,7 @@ import com.example.demo.UserRepository;
 import com.example.demo.msgbroker.MessagePublisher;
 import com.example.demo.server.VideoDetails;
 import com.example.demo.server.VideoRepository;
+import com.example.demo.NotifRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -57,6 +58,9 @@ public class Controller {
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    NotifRepository notifRepository;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;

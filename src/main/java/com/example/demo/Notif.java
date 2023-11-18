@@ -38,4 +38,8 @@ public class Notif {
         this.user = user;
     }
  
+    public void removeUser() {
+        this.user = null;
+    }
+
 }

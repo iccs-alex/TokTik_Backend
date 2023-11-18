@@ -25,7 +25,7 @@ public class MyUser {
 
     private String role;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Notif> notifs = new ArrayList<>();
 
     @ElementCollection(targetClass = String.class, fetch = FetchType.LAZY)
@@ -38,7 +38,15 @@ public class MyUser {
     }
 
     public void removeNotif(Long notifId) {
-        notifs.removeIf(n -> n.getId().equals(notifId));
+        notifs.removeIf(n -> syncDeletion(n, notifId));
+    }
+    
+    private boolean syncDeletion(Notif notif, Long notifId) {
+        if(notif.getId().equals(notifId)) {
+            notif.removeUser();
+            return true;
+        }
+        return false;
     }
 
     public MyUser(String username, String password, String role) {
